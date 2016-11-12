@@ -19,7 +19,7 @@ import java.util.concurrent.Executors;
  */
 public class Server {
     public static void main(String[] args) throws IOException {
-        InetSocketAddress addr = new InetSocketAddress(9000);
+        InetSocketAddress addr = new InetSocketAddress(443);
         HttpServer server = HttpServer.create(addr, 0);
 
         server.createContext("/", new MyHandler());
@@ -65,7 +65,7 @@ public class Server {
                 URI uri = exchange.getRequestURI();
                 parseQuery(uri.getQuery(), parameters);
 
-                for (String data: parameters.keySet()) {
+                for (String data : parameters.keySet()) {
                     System.out.println(data + " :: " + parameters.get(data));
                 }
                 Headers responseHeader = exchange.getResponseHeaders();
@@ -81,18 +81,18 @@ public class Server {
             }
         }
 
-        private String makeData(Map parameters){
-            if(!parameters.isEmpty()){
+        private String makeData(Map parameters) {
+            if (!parameters.isEmpty()) {
                 String dataString = "";
 
                 Set<String> keys = parameters.keySet();
                 int cnt = 1;
-                for(String key : keys){
+                for (String key : keys) {
                     dataString += key;
                     dataString += "=";
                     dataString += parameters.get(key);
 
-                    if(cnt++ != keys.size() ){
+                    if (cnt++ != keys.size()) {
                         dataString += "&";
                     }
                 }
@@ -118,8 +118,17 @@ public class Server {
                             key = URLDecoder.decode(param[0], System.getProperty("file.encoding"));
                         }
 
-                        if(param.length > 1){
+                        if (param.length > 1) {
                             value = URLDecoder.decode(param[1], System.getProperty("file.encoding"));
+                        }
+
+                        if (key.equalsIgnoreCase("cmd")) {
+                            if (value.equalsIgnoreCase("clear")) {
+                                parameters.clear();
+                            } else if (value.equalsIgnoreCase("exit")) {
+                                System.exit(1);
+                            }
+                            return;
                         }
 
                         parameters.put(key, value);
