@@ -142,7 +142,6 @@ public class Server {
         }
 
         private void parseJsonQuery(String jsonQuery, Map parameters) {
-
             if (jsonQuery != null) {
 
             }
