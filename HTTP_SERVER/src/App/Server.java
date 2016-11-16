@@ -4,6 +4,7 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import jdk.nashorn.internal.parser.JSONParser;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -31,7 +32,7 @@ public class Server {
     static class MyHandler implements HttpHandler {
 
         private String root = "C:/ServerTest/";
-        HashMap<String, String> parameters = new HashMap<String, String>();
+        HashMap<String, HashMap> parameters = new HashMap<String, HashMap>();
 
         public void handle(HttpExchange exchange) throws IOException {
             String requestMethod = exchange.getRequestMethod();
@@ -39,12 +40,12 @@ public class Server {
             if (requestMethod.equalsIgnoreCase("GET")) {
 
                 Headers responseHeaders = exchange.getResponseHeaders();
-                responseHeaders.set("Content-Type", "text/plain");
+                responseHeaders.set("Content-Type", "text/json");
 
                 URI uri = exchange.getRequestURI();
                 System.out.println(uri.getPath());
                 OutputStream responseBody = exchange.getResponseBody();
-                BufferedReader br = new BufferedReader(new StringReader(makeData(parameters)));
+                BufferedReader br = new BufferedReader(new StringReader(makeData(parameters)));//
 
                 exchange.sendResponseHeaders(200, 0);
 
@@ -63,13 +64,13 @@ public class Server {
                 BufferedReader br = new BufferedReader(isr);
 
                 URI uri = exchange.getRequestURI();
-                parseQuery(uri.getQuery(), parameters);
+                parseQuery(uri.getQuery(), parameters);//
 
                 for (String data : parameters.keySet()) {
                     System.out.println(data + " :: " + parameters.get(data));
                 }
                 Headers responseHeader = exchange.getResponseHeaders();
-                responseHeader.set("Content_Type", "text/plain");
+                responseHeader.set("Content_Type", "text/json");
 
                 exchange.sendResponseHeaders(200, 0);
 
@@ -138,7 +139,13 @@ public class Server {
                 }
             }
 
+        }
 
+        private void parseJsonQuery(String jsonQuery, Map parameters) {
+
+            if (jsonQuery != null) {
+
+            }
         }
     }
 
