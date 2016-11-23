@@ -4,7 +4,6 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import jdk.nashorn.internal.parser.JSONParser;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -32,7 +31,8 @@ public class Server {
     static class MyHandler implements HttpHandler {
 
         private String root = "C:/ServerTest/";
-        HashMap<String, HashMap> parameters = new HashMap<String, HashMap>();
+        //HashMap<String, HashMap> parameters = new HashMap<String, HashMap>();
+        HashMap<String, HashMap> parentParameters = new HashMap<String, HashMap>();
 
         public void handle(HttpExchange exchange) throws IOException {
             String requestMethod = exchange.getRequestMethod();
@@ -45,7 +45,7 @@ public class Server {
                 URI uri = exchange.getRequestURI();
                 System.out.println(uri.getPath());
                 OutputStream responseBody = exchange.getResponseBody();
-                BufferedReader br = new BufferedReader(new StringReader(makeData(parameters)));//
+                BufferedReader br = new BufferedReader(new StringReader(makeData(parentParameters)));//
 
                 exchange.sendResponseHeaders(200, 0);
 
@@ -64,11 +64,11 @@ public class Server {
                 BufferedReader br = new BufferedReader(isr);
 
                 URI uri = exchange.getRequestURI();
-                parseQuery(uri.getQuery(), parameters);//
+                parseQuery(uri.getQuery(), parentParameters);//
 
-                for (String data : parameters.keySet()) {
-                    System.out.println(data + " :: " + parameters.get(data));
-                }
+            //    for (String data : parameters.keySet()) {
+             //       System.out.println(data + " :: " + parameters.get(data));
+             //   }
                 Headers responseHeader = exchange.getResponseHeaders();
                 responseHeader.set("Content_Type", "text/json");
 
@@ -84,19 +84,35 @@ public class Server {
 
         private String makeData(Map parameters) {
             if (!parameters.isEmpty()) {
-                String dataString = "";
+                int parentCnt = 1;
+                String dataString = "{";
+                Set<String> parentKeys = parameters.keySet();
+                for (String parentKey : parentKeys) {
+                    HashMap<String, String> childParameters = (HashMap<String, String>) parameters.get(parentKey);
+                    if (!childParameters.isEmpty()) {
+                        int childCnt = 1;
+                        dataString += parentKey + " : {";
+                        Set<String> childKeys = childParameters.keySet();
 
-                Set<String> keys = parameters.keySet();
-                int cnt = 1;
-                for (String key : keys) {
-                    dataString += key;
-                    dataString += "=";
-                    dataString += parameters.get(key);
+                        for (String childKey : childKeys) {
+                            dataString += childKey;
+                            dataString += ":";
+                            dataString += childParameters.get(childKey);
 
-                    if (cnt++ != keys.size()) {
-                        dataString += "&";
+                            if (childCnt++ != childKeys.size()) {
+                                dataString += ", ";
+                            } else {
+                                dataString += "}";
+                            }
+                        }
                     }
+
+                    if(parentCnt++ != parentKeys.size()){
+                        dataString += ", ";
+                    }
+
                 }
+                dataString += "}";
                 return dataString;
             }
 
@@ -104,10 +120,13 @@ public class Server {
         }
 
         private void parseQuery(String query, Map parameters) {
-
+            /*******************************
+             *
+             * 여기에서 JSON 파싱해서 저장하는거 만들어야함
+             *
+             * */
             if (query != null) {
                 String pairs[] = query.split("[&]");
-
                 for (String pair : pairs) {
                     String param[] = pair.split("[=]");
 
