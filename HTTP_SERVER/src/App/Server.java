@@ -4,11 +4,12 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -40,7 +41,7 @@ public class Server {
             if (requestMethod.equalsIgnoreCase("GET")) {
 
                 Headers responseHeaders = exchange.getResponseHeaders();
-                responseHeaders.set("Content-Type", "text/json");
+                responseHeaders.set("Content-Type", "text/plain");
 
                 URI uri = exchange.getRequestURI();
                 System.out.println(uri.getPath());
@@ -66,11 +67,11 @@ public class Server {
                 URI uri = exchange.getRequestURI();
                 parseQuery(uri.getQuery(), parentParameters);//
 
-            //    for (String data : parameters.keySet()) {
-             //       System.out.println(data + " :: " + parameters.get(data));
-             //   }
+                //    for (String data : parameters.keySet()) {
+                //       System.out.println(data + " :: " + parameters.get(data));
+                //   }
                 Headers responseHeader = exchange.getResponseHeaders();
-                responseHeader.set("Content_Type", "text/json");
+                responseHeader.set("Content_Type", "text/plain");
 
                 exchange.sendResponseHeaders(200, 0);
 
@@ -107,7 +108,7 @@ public class Server {
                         }
                     }
 
-                    if(parentCnt++ != parentKeys.size()){
+                    if (parentCnt++ != parentKeys.size()) {
                         dataString += ", ";
                     }
 
@@ -125,39 +126,58 @@ public class Server {
              * 여기에서 JSON 파싱해서 저장하는거 만들어야함
              *
              * */
-            if (query != null) {
-                String pairs[] = query.split("[&]");
-                for (String pair : pairs) {
-                    String param[] = pair.split("[=]");
+            try {
+                if(query != null){
+                    String pairs[] = query.split("[=]");
 
-                    String key = null;
-                    String value = null;
+                    JSONObject parentBody = (JSONObject) JSONValue.parse(pairs[1]);
+                    Set<String> parentKeys = parentBody.keySet();
 
-                    try {
-                        if (param.length > 0) {
-                            key = URLDecoder.decode(param[0], System.getProperty("file.encoding"));
-                        }
+                    for (String parentKey : parentKeys) {
+                        JSONObject chileBody = (JSONObject) parentBody.get(parentKey);
+                        HashMap<String, String> childHash = new HashMap<String, String>();
 
-                        if (param.length > 1) {
-                            value = URLDecoder.decode(param[1], System.getProperty("file.encoding"));
-                        }
+                        if (chileBody != null) {
+                            //String pairs[] = query.split("[&]");
+                            Set<String> childKeys = chileBody.keySet();
+                            // for (String pair : childKeys) {
+                            for (String childKey : childKeys) {
+                                //String param[] = pair.split("[=]");
 
-                        if (key.equalsIgnoreCase("cmd")) {
-                            if (value.equalsIgnoreCase("clear")) {
-                                parameters.clear();
-                            } else if (value.equalsIgnoreCase("exit")) {
-                                System.exit(1);
+                                String key = null;
+                                String value = null;
+
+
+//                            if (param.length > 0) {
+                                //                              key = URLDecoder.decode(param[0], System.getProperty("file.encoding"));
+                                //                        }
+//
+                                //                          if (param.length > 1) {
+                                //                            value = URLDecoder.decode(param[1], System.getProperty("file.encoding"));
+                                //                      }
+
+                                key = childKey;
+                                value = (String) chileBody.get(key);
+
+                                if (key.equalsIgnoreCase("cmd")) {
+                                    if (value.equalsIgnoreCase("clear")) {
+                                        parameters.clear();
+                                    } else if (value.equalsIgnoreCase("exit")) {
+                                        System.exit(1);
+                                    }
+                                    return;
+                                }
+
+                                childHash.put(key, value);
                             }
-                            return;
                         }
-
-                        parameters.put(key, value);
-                    } catch (UnsupportedEncodingException e) {
-                        e.printStackTrace();
+                        parameters.put(parentKey, childHash);
                     }
                 }
-            }
 
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         private void parseJsonQuery(String jsonQuery, Map parameters) {
